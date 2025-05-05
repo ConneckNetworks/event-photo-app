@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Image Upload</title>
+</head>
+<body>
+  <h2>Upload an Image</h2>
+  <form id="uploadForm" enctype="multipart/form-data" method="post" action="http://localhost:3001/upload">
+    <input type="file" name="image" accept="image/*" required />
+    <button type="submit">Upload</button>
+  </form>
+</body>
+</html>
