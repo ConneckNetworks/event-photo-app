@@ -4,31 +4,34 @@ const multer = require('multer');
 const path = require('path');
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001; // Use environment port or fallback to 3001
 
-// Enable CORS for local development
 app.use(cors());
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
-// Set up Multer storage configuration
+// Set up Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads');
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Add timestamp to filename
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// Endpoint to handle image upload
+// Upload endpoint
 app.post('/upload', upload.single('image'), (req, res) => {
   console.log('File uploaded:', req.file);
-  res.send({ message: 'File uploaded successfully' });
+  res.send({ message: 'File uploaded successfully', filename: req.file.filename });
 });
 
-// Serve static files from "uploads" folder
-app.use('/uploads', express.static('uploads'));
+// ✅ Root route for Render
+app.get('/', (req, res) => {
+  res.send('Event Photo App Backend is Running');
+});
 
 // Start the server
 app.listen(port, () => {
