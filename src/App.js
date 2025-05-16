@@ -1,85 +1,77 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import Webcam from 'react-webcam';
+import './App.css';
 
-// Set the server URL (where your backend is running)
-const SERVER_URL = 'http://localhost:3001'; // Make sure your backend is running here
+const App = () => {
+  const [images, setImages] = useState([]); // To hold captured images and their statuses
+  const [isUploading, setIsUploading] = useState(false); // Flag to prevent duplicate uploads
+  
+  const webcamRef = React.useRef(null);
 
-function App() {
-  const webcamRef = useRef(null);  // Webcam reference
-  const [uploaded, setUploaded] = useState(false); // Track if the photo was uploaded
-  const [preview, setPreview] = useState(null);    // Store the preview image
-  const [uploading, setUploading] = useState(false); // Track the upload state
+  // Capture image from webcam
+  const capture = React.useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setImages([...images, { src: imageSrc, status: 'Uploading...' }]); // Add new image with uploading status
+    uploadImage(imageSrc); // Start upload after capture
+  }, [images]);
 
-  // Function to capture image from webcam and upload it
-  const captureAndUpload = () => {
-    const imageSrc = webcamRef.current.getScreenshot(); // Get screenshot from webcam
-    setPreview(imageSrc); // Set the preview image
+  // Function to handle image upload
+  const uploadImage = async (imageSrc) => {
+    setIsUploading(true);
+    
+    // Form data for the image upload
+    const formData = new FormData();
+    const base64Data = imageSrc.split(',')[1]; // Get base64 data from image
+    const imageBlob = new Blob([new Uint8Array(atob(base64Data).split("").map(c => c.charCodeAt(0)))], { type: 'image/jpeg' });
+    formData.append('image', imageBlob, 'captured.jpg');
 
-    setUploading(true); // Start the upload process
-
-    // Create a FormData object to send the image to the server
-    fetch(imageSrc)
-      .then(res => res.blob()) // Convert image to blob
-      .then(blob => {
-        const formData = new FormData();
-        formData.append('image', blob, 'photo.jpg'); // Append image to FormData
-
-        // Send the image to the backend server
-        fetch(`${SERVER_URL}/upload`, {
-          method: 'POST',
-          body: formData,
-        })
-          .then(res => res.json()) // Check server response
-          .then(() => {
-            setUploaded(true); // Mark upload as successful
-            setUploading(false); // Stop the uploading state
-          })
-          .catch(err => {
-            console.error('Upload failed:', err); // Handle errors
-            setUploading(false); // Stop the uploading state
-          });
+    try {
+      const response = await fetch('http://https://your-backend-name.onrender.com:3001/upload', {
+        method: 'POST',
+        body: formData,
       });
+
+      if (response.ok) {
+        // Update image status to 'Uploaded'
+        setImages(prevImages => prevImages.map(img => 
+          img.src === imageSrc ? { ...img, status: 'Uploaded ✅' } : img
+        ));
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <h2>Event Photo Capture</h2>
-
-      {/* Webcam component */}
+    <div className="App">
+      <h1>Event Photo Capture App</h1>
       <Webcam
-        audio={false}  // No audio
-        ref={webcamRef}  // Reference to the webcam
-        screenshotFormat="image/jpeg" // Screenshot format
-        width={800}  // Width of the webcam display
-        height={600} // Height of the webcam display
-        style={{ marginBottom: '10px' }} // Style for spacing
+        audio={false}
+        ref={webcamRef}
+        screenshotFormat="image/jpeg"
+        width="100%"
+        videoConstraints={{
+          facingMode: "environment"
+        }}
       />
+      <button onClick={capture} disabled={isUploading}>
+        {isUploading ? 'Uploading...' : 'Capture'}
+      </button>
 
-      {/* Button to trigger image capture and upload */}
-      <div>
-        <button onClick={captureAndUpload} disabled={uploading}>
-          {uploading ? 'Uploading...' : 'Capture & Upload'}
-        </button>
+      <div className="gallery">
+        {images.map((image, index) => (
+          <div key={index} className="image-preview">
+            <img src={image.src} alt={`preview ${index}`} />
+            <div>{image.status}</div>
+          </div>
+        ))}
       </div>
-
-      {/* Display preview of the captured image */}
-      {preview && (
-        <div style={{ marginTop: '20px' }}>
-          <h4>Preview</h4>
-          <img
-            src={preview}  // Display the preview image
-            alt="Captured"
-            width="400"  // Set the width of the image
-            style={{
-              border: uploaded ? '4px solid green' : '4px solid gray',  // Green border if uploaded
-              borderRadius: '10px',  // Round the corners of the image
-            }}
-          />
-          {uploaded && <p style={{ color: 'green' }}>✅ Uploaded</p>}  {/* Display success message */}
-        </div>
-      )}
     </div>
   );
-}
+};
 
 export default App;
