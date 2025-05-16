@@ -33,6 +33,16 @@ app.get('/', (req, res) => {
   res.send('Event Photo App Backend is Running');
 });
 
+const path = require('path');
+
+// Serve static files from the React app build folder
+app.use(express.static(path.join(__dirname, '../build')));
+
+// For any other route, serve index.html so React can handle routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
