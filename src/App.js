@@ -26,7 +26,7 @@ const App = () => {
     formData.append('image', imageBlob, 'captured.jpg');
 
     try {
-      const response = await fetch('http://https://your-backend-name.onrender.com:3001/upload', {
+      const response = await fetch('https://event-photo-app-backend.onrender.com/upload', {
         method: 'POST',
         body: formData,
       });
